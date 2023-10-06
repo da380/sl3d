@@ -1,0 +1,1 @@
+ plot 'sl.64.1d.dacheck.20.0' u 1:2:4 w image
