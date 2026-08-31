@@ -24,7 +24,7 @@ contains
 
     integer(i4b), intent(in) :: nt,nout
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi,nt), intent(in) :: sl_fin
     type(meas), intent(in) :: adj_load
     complex(dpc), dimension((lmax+1)**2,nglob_ssg,nout), intent(in) :: UVp
@@ -64,8 +64,8 @@ contains
        ! Interpolate to find rate of change of load
        ! We want load at previous time step and time reversed
        it1 = time_point(nt-it+2,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+2,dt,ice_data(:,:,it1:it1+1),ice_load)
        end if
@@ -84,8 +84,8 @@ contains
        sltmp = 0.5_dp*(sl_fin(:,:,nt-it+2) + sl_fin(:,:,nt-it+1))
 
        it1 = time_point(nt-it+1,dt)
-       if (it1 == nt_ice5g) then
-          ice_tmp = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_tmp = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+1,dt,ice_data(:,:,it1:it1+1),ice_tmp)
        end if
@@ -129,7 +129,7 @@ contains
 
     integer(i4b), intent(in) :: nt,nout
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi,nt), intent(in) :: sl_fin
     type(point_meas), dimension(:), intent(in), optional :: point_data
     type(rsh_meas), dimension(:), intent(in), optional :: rsh_data
@@ -198,8 +198,8 @@ contains
        ! Interpolate to find rate of change of load
        ! We want load at previous time step and time reversed
        it1 = time_point(nt-it+2,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+2,dt,ice_data(:,:,it1:it1+1),ice_load)
        end if
@@ -218,8 +218,8 @@ contains
        sltmp = 0.5_dp*(sl_fin(:,:,nt-it+2) + sl_fin(:,:,nt-it+1))
 
        it1 = time_point(nt-it+1,dt)
-       if (it1 == nt_ice5g) then
-          ice_tmp = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_tmp = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+1,dt,ice_data(:,:,it1:it1+1),ice_tmp)
        end if
@@ -278,7 +278,7 @@ contains
 
     integer(i4b), intent(in) :: nt,nout
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi,nt), intent(in) :: sl_fin
     type(point_meas), dimension(:), intent(in), optional :: point_data
     type(rsh_meas), dimension(:), intent(in), optional :: rsh_data
@@ -351,8 +351,8 @@ contains
        ! Interpolate to find rate of change of load
        ! We want load at previous time step and time reversed
        it1 = time_point(nt-it+2,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+2,dt,ice_data(:,:,it1:it1+1),ice_load)
        end if
@@ -371,8 +371,8 @@ contains
        sltmp = 0.5_dp*(sl_fin(:,:,nt-it+2) + sl_fin(:,:,nt-it+1))
 
        it1 = time_point(nt-it+1,dt)
-       if (it1 == nt_ice5g) then
-          ice_tmp = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_tmp = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+1,dt,ice_data(:,:,it1:it1+1),ice_tmp)
        end if
@@ -641,7 +641,7 @@ contains
 
     integer(i4b), intent(in) :: nt,nout
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi,nt), intent(in) :: sl_fin
     type(meas), intent(in) :: adj_load
     complex(dpc), dimension(ngl,nphi,nout), intent(out) :: ice_kern
@@ -678,8 +678,8 @@ contains
        ! Interpolate to find rate of change of load
        ! We want load at previous time step and time reversed
        it1 = time_point(nt-it+2,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+2,dt,ice_data(:,:,it1:it1+1),ice_load)
        end if
@@ -694,8 +694,8 @@ contains
 
        ! Calculate load at CURRENT reversed time
        it1 = time_point(nt-it+1,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+1,dt,ice_data(:,:,it1:it1+1),ice_load)
        end if
@@ -835,7 +835,7 @@ contains
     implicit none
 
     real(dp), intent(in) :: t2
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi), intent(in) :: sl_init
     type(comb_meas), intent(in) :: comb_data
     character(len=256), intent(in) :: file1
@@ -1543,7 +1543,7 @@ contains
 
     real(dp), intent(in) :: misfit,t2
     complex(dpc), dimension(ngl,nphi,ngll,nspec), intent(in) :: kern,pgrad
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi), intent(in) :: sl_init
     type(point_meas), dimension(:), intent(in), optional :: point_data
     type(rsh_meas), dimension(:), intent(in), optional :: rsh_data

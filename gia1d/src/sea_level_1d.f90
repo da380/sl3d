@@ -8,6 +8,7 @@ program sea_level_1d
   use module_model
   use module_mat
   use module_sl
+  use module_ice
 
   implicit none
 
@@ -26,13 +27,13 @@ program sea_level_1d
   complex(dpc), dimension(:), allocatable :: sl_lm,water_lm,iceload_lm
 
   integer(i4b) :: ilat,ilong,ilonged,igl,iphi,it1,it1_old,icount
-  real(dp) :: tmp,long,lat,xx,yy
+  real(dp) :: tmp,long,lat,xx,yy,age
+  integer(i4b) :: iage
 
   integer(i4b) :: nt,it,l,ispec1,lmcur,ia,inode,ispec,m,ua,nout,pa
   real(dp) :: t1,t2,dt,rl,sltmp
 
   complex(dpc), dimension(:,:,:), allocatable :: sl_out
-  complex(dpc), dimension(:,:,:), allocatable :: UVp_out
 
   !------------------------------------!
   !  set the normalization parameters  !
@@ -45,11 +46,14 @@ program sea_level_1d
 
   ! if needed, display input info
   if(narg == 0) then
-     print *, 'inputs: [model]'
+     print *, 'inputs: [model] {ice model: ice5g (default), ice6g, ice7g}'
      stop
   end if
 
-  if(narg /= 1) stop 'bad input'
+  if(narg > 2) stop 'bad input'
+
+  ! the ice model may be named as an optional second argument
+  call init_ice_model
 
   !--------------------------!
   !  read in the model file  !
@@ -92,7 +96,7 @@ program sea_level_1d
   !             calculate load              !
   !=========================================!
 
-  allocate(ice_data(ngl,nphi,nt_ice5g))
+  allocate(ice_data(ngl,nphi,nt_ice))
 
   call set_ice_model(ice_data) 
 
@@ -101,19 +105,11 @@ program sea_level_1d
   !==================================================!
 
   ! set initial sea level to be negative topography
-  allocate(sea_t(nlong_ice5g,nlat_ice5g))
+  allocate(sea_t(nlong_ice,nlat_ice))
   sea_t = 0.0_dp
-  open(newunit=io,file='/home/oc251/raid/data/ice5g/ascii/ice5g_v1.2_21.0k_1deg.orog.ascii')
-  do ilat = 1,nlat_ice5g
-     do ilong = 1,nlong_ice5g
-        !ilonged = ilong
-        ilonged = ilong + (nlong_ice5g/2)
-        if (ilonged > nlong_ice5g) ilonged = ilonged - nlong_ice5g
-        read(io,*) tmp
-        sea_t(ilonged,ilat) = -1.0_dp*tmp/(r_norm)
-     end do
-  end do
-  close(io)
+  ! the surface altitude at 21 ka, as negative topography
+  call read_ice_grid(1,'topography',sea_t)
+  sea_t = -sea_t/r_norm
 
   allocate(sea_level_data(ngl,nphi))
   sea_level_data = 0.0_dp
@@ -136,36 +132,33 @@ program sea_level_1d
   !             GIA calculation               !
   !===========================================!
 
-  ! set time stepping parameters
+  ! set time stepping parameters: run over the whole of the chosen ice
+  ! history, in steps of 50 years, writing the sea level every 500
   t1 = 0.0_dp
-  t2 = 1000.0_dp*yr2sec/t_norm
-  dt = 50.0_dp*yr2sec/t_norm
-  !nt = (t2-t1)/dt + 1
-  nt = 21
+  t2 = ice_total_time()*yr2sec/t_norm
+  nt = nint(ice_total_time()/50.0_dp) + 1
   dt = (t2-t1)/(nt-1)
   print *, dt*t_norm*sec2yr
 
-  !nout = t2*t_norm*sec2yr/1000.0_dp + 1
-  nout = 3
-  !print *, nout
-  !nout = nt
+  nout = nint(ice_total_time()/500.0_dp) + 1
 
   ! Construct A matrices
   call construct_system_matrix
 
   allocate(sl_out(ngl,nphi,nout))
-  allocate(UVp_out((lmax+1)**2,nglob_ssg,nout))
 
-  call forward_full_sl(nt,dt,nout,ice_data,sea_level_data,sl_out,UVp_out = UVp_out)
+  call forward_full_sl(nt,dt,nout,ice_data,sea_level_data,sl_out)
    
 
   do it = 1,nout
-     call string_cat_int('sl.64.1d.dacheck.',21-it/2,file1)
-     if (mod(it,2) == 0) then
-        file2 = trim(file1) // trim('.5')
-     else
-        file2 = trim(file1) // trim('.0')
-     end if
+     ! name each file by the age it holds, in ka, taken from the run's own
+     ! time base rather than assumed, so the names stay right whichever ice
+     ! model was chosen and however often the run writes output
+     age = (ice_total_time() &
+            - (it-1)*(t2-t1)*t_norm*sec2yr/max(nout-1,1))/1000.0_dp
+     iage = nint(100.0_dp*age)          ! the age in hundredths of a ka, so
+     write(file2,'(a,i0,a,i2.2)') &     ! that output written every ten years
+          'sl.1d.',iage/100,'.',mod(iage,100)     ! or less often is distinct
      open(newunit=io,file=file2)
      do iphi = 1,nphi
         !long = aphi(iphi)*rad2deg

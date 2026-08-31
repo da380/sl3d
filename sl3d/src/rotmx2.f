@@ -75,20 +75,23 @@ c==================================================================%
       NMAXP1=NMAX+1
       LMN=L-NMAX
       IF(TH.NE.0.D0) GOTO 320
-      DO 330 IM1CT=1,NROW
+      DO IM1CT=1,NROW
       IM1=IM1CT+LMN
-      DO 330 IM2=LP1,NM
+      DO IM2=LP1,NM
       D(IM1CT,IM2)=0.D0
       IF(IM1.EQ.IM2) D(IM1CT,IM2)=1.D0
-330   CONTINUE
+      END DO
+      END DO
       GOTO 400
 320   CONTINUE
 C
 C     ZERO L.H.S. OF MATRIX
 C
-      DO 340 IM1=1,NROW
-      DO 340 IM2=1,LP1
-340   D(IM1,IM2)=0.D0
+      DO IM1=1,NROW
+      DO IM2=1,LP1
+      D(IM1,IM2)=0.D0
+      END DO
+      END DO
 C
 C        SET UP PARAMETERS
 C
@@ -138,10 +141,11 @@ C
 710   CONTINUE
 720   D(1,1)=T1
       IF(NROW.EQ.1) GOTO 730
-      DO 110 IM1CT=2,NROW
+      DO IM1CT=2,NROW
       M1=IM1CT-NMAXP1
-110   D(IM1CT,1)=DLOGF+0.5D0*DLOG10(DFLOAT(L-M1+1)/DFLOAT(L+M1))
+      D(IM1CT,1)=DLOGF+0.5D0*DLOG10(DFLOAT(L-M1+1)/DFLOAT(L+M1))
      1     +D(IM1CT-1,1)
+      END DO
 730   SGN=-1.D0
       IF((LMN/2)*2.NE.LMN) SGN=1.D0
 C
@@ -188,13 +192,15 @@ C
 400   IF(ISUP.GT.0) GOTO 410
       SGN=-1.D0
       IF((LMN/2)*2.NE.LMN) SGN=1.D0
-      DO 420 IM1CT=1,NROW
+      DO IM1CT=1,NROW
       SGN=-SGN
       IM1=IM1CT+LMN
       NM2=MIN0(IM1,NMP1-IM1)
-      DO 420 IN2=1,NM2
+      DO IN2=1,NM2
       IM2=NMP1-IN2
-420   D(IM1CT,IN2)=SGN*D(IM1CT,IM2)
+      D(IM1CT,IN2)=SGN*D(IM1CT,IM2)
+      END DO
+      END DO
       DO 430 IM1CT=1,NROW
       IM1=IM1CT+LMN
       IN1=NMP1-IM1

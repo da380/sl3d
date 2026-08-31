@@ -1,0 +1,12 @@
+# CMake build tree; everything the build produces lives in here
+build/
+
+# Stray compiled artefacts, in case anything is built by hand
+*.o
+*.mod
+*.a
+
+# Python
+__pycache__/
+*.pyc
+venv/

@@ -24,7 +24,7 @@ contains
 
     integer(i4b), intent(in) :: nt
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi,nt), intent(in) :: sl_fin
     type(meas), intent(in) :: adj_load
     complex(dpc), dimension((lmax+1)**2,nglob_ssg,nt), intent(in) :: UVp
@@ -57,8 +57,8 @@ contains
        ! Interpolate to find rate of change of load
        ! We want load at previous time step and time reversed
        it1 = time_point(nt-it+2,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+2,dt,ice_data(:,:,it1:it1+1),ice_load)
        end if
@@ -75,8 +75,8 @@ contains
        sltmp = 0.5_dp*(sl_fin(:,:,nt-it+2) + sl_fin(:,:,nt-it+1))
 
        it1 = time_point(nt-it+1,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+1,dt,ice_data(:,:,it1:it1+1),ice_tmp)
        end if
@@ -347,7 +347,7 @@ contains
 
     integer(i4b), intent(in) :: nt,nout
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi,nt), intent(in) :: sl_fin
     type(meas), intent(in) :: adj_load
     complex(dpc), dimension(ngl,nphi,nout), intent(out) :: ice_kern
@@ -383,8 +383,8 @@ contains
        ! Interpolate to find rate of change of load
        ! We want load at previous time step and time reversed
        it1 = time_point(nt-it+2,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+2,dt,ice_data(:,:,it1:it1+1),ice_load)
        end if
@@ -399,8 +399,8 @@ contains
 
        ! Calculate load at CURRENT reversed time
        it1 = time_point(nt-it+1,dt)
-       if (it1 == nt_ice5g) then
-          ice_load = ice_data(:,:,nt_ice5g)
+       if (it1 == nt_ice) then
+          ice_load = ice_data(:,:,nt_ice)
        else
           call load_interp(nt-it+1,dt,ice_data(:,:,it1:it1+1),ice_load)
        end if
@@ -520,7 +520,7 @@ contains
 
     integer(i4b), intent(in) :: nt
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi), intent(in) :: sl_init_in
     complex(dpc), dimension(ngl,nphi), intent(in) :: sl_fin_data
     character(len=256), intent(in) :: file1
@@ -583,7 +583,7 @@ contains
     call coefs_from_fun(lmax,load_spat,load%load_lm)
 
     ! Adjoint and kernel calculation  
-    call adj_kern_init_sl(ice_data(:,:,nt_ice5g),sl_out(:,:,2),load,kern)
+    call adj_kern_init_sl(ice_data(:,:,nt_ice),sl_out(:,:,2),load,kern)
 
     pgrad = -kern
 
@@ -641,7 +641,7 @@ contains
        call coefs_from_fun(lmax,load_spat,load%load_lm)
 
        ! Adjoint and kernel calculation  
-       call adj_kern_init_sl(ice_data(:,:,nt_ice5g),sl_out(:,:,2),load,kern)
+       call adj_kern_init_sl(ice_data(:,:,nt_ice),sl_out(:,:,2),load,kern)
 
        ! Calculate beta
        call beta_calc_sl(kern,kerno,beta)
@@ -662,7 +662,7 @@ contains
     integer(i4b) :: nt
     real(dp), intent(in) :: misfit,dt
     complex(dpc), dimension(ngl,nphi), intent(in) :: kern,pgrad
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi), intent(in) :: sl_init_in
     complex(dpc), dimension(ngl,nphi), intent(in) :: sl_fin_data
     complex(dpc), intent(out) :: alpha

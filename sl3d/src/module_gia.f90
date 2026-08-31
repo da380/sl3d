@@ -7,14 +7,11 @@ module module_gia
   use module_function
   use module_fourier
   use module_spline
+  use module_ice
   
   implicit none
 
-  integer(i4b), protected :: nlat_ice5g = 180
-  integer(i4b), protected :: nlong_ice5g = 360
 
-  integer(i4b), protected :: nt_ice5g = 39
-  integer(i4b), protected :: nt_ice6g = 58
 
   complex(dpc), dimension(:), allocatable, save :: hall
 
@@ -628,7 +625,7 @@ contains
     implicit none
 
     real(dp) :: interp
-    real(dp), dimension(nlong_ice5g,nlat_ice5g), intent(in) :: func_arr
+    real(dp), dimension(nlong_ice,nlat_ice), intent(in) :: func_arr
     real(dp), intent(in) :: lat,long
 
     integer(i4b) :: ilat1,ilong1,ilat2,ilong2
@@ -682,10 +679,10 @@ contains
 
     t_act = (it-1)*dt
 
-    if (t_act < 4000*yr2sec/t_norm) then
+    if (t_act < ice_coarse_time()*yr2sec/t_norm) then
        time_point = floor(t_act/(1000.0_dp*yr2sec/t_norm)) + 1
     else
-       time_point = nt_ice5g - ceiling(((21000.0_dp*yr2sec/t_norm) - t_act)/(500.0_dp*yr2sec/t_norm))
+       time_point = nt_ice - ceiling(((ice_total_time()*yr2sec/t_norm) - t_act)/(500.0_dp*yr2sec/t_norm))
     end if
 
     !print *, it,time_point,t_act*t_norm*sec2yr
@@ -700,7 +697,7 @@ contains
 
     integer(i4b), intent(in) :: it
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice
     complex(dpc), dimension(ngl,nphi), intent(out) :: ice_it
     complex(dpc), dimension(ngl,nphi), intent(out), optional :: icedot_it
 
@@ -709,7 +706,7 @@ contains
 
     t_act = (it-1)*dt
 
-    if (t_act < 4000*yr2sec/t_norm) then
+    if (t_act < ice_coarse_time()*yr2sec/t_norm) then
        t_point = floor(t_act/(1000.0_dp*yr2sec/t_norm)) + 1
        t_rem = t_act - (t_point - 1)*(1000_dp*yr2sec/t_norm)
        if (t_rem < 0.0_dp) t_rem = 0.0_dp
@@ -727,14 +724,14 @@ contains
 
        
     else
-       t_point = nt_ice5g - ceiling(((21000.0_dp*yr2sec/t_norm) - t_act)/(500.0_dp*yr2sec/t_norm))
-       if (t_point == nt_ice5g) then
-          ice_it = ice(:,:,nt_ice5g)
+       t_point = nt_ice - ceiling(((ice_total_time()*yr2sec/t_norm) - t_act)/(500.0_dp*yr2sec/t_norm))
+       if (t_point == nt_ice) then
+          ice_it = ice(:,:,nt_ice)
           if (present(icedot_it)) then
              icedot_it = (t_norm/(500.0_dp*yr2sec))*(ice(:,:,t_point) - ice(:,:,t_point-1))
           end if
        else
-          t_rem = t_act - 4000.0_dp*yr2sec/t_norm - (t_point - 5)*(500.0_dp*yr2sec/t_norm)
+          t_rem = t_act - ice_coarse_time()*yr2sec/t_norm - (t_point - ice_ib)*(500.0_dp*yr2sec/t_norm)
           if (t_rem < 0.0_dp) t_rem = 0.0_dp
           if (t_rem > 499.5_dp*yr2sec/t_norm) then
              t_point = t_point + 1
@@ -768,7 +765,7 @@ contains
 
     t_act = (it-1)*dt
 
-    if (t_act < 4000*yr2sec/t_norm) then
+    if (t_act < ice_coarse_time()*yr2sec/t_norm) then
        t_diff = t_act - (1000.0_dp*yr2sec/t_norm)*floor(t_act*t_norm/(1000.0_dp*yr2sec))
        ice_it = ice(:,:,1) + (t_norm*t_diff/(1000.0_dp*yr2sec))*(ice(:,:,2) - ice(:,:,1))
     else
@@ -794,7 +791,7 @@ contains
 
     t_act = (it-1)*dt
 
-    if (t_act < 4000*yr2sec/t_norm) then
+    if (t_act < ice_coarse_time()*yr2sec/t_norm) then
        icedot_it = (t_norm/(1000.0_dp*yr2sec))*(ice(:,2) - ice(:,1))
     else
        icedot_it = (t_norm/(500.0_dp*yr2sec))*(ice(:,2) - ice(:,1))
@@ -816,7 +813,7 @@ contains
 
     t_act = (it-1)*dt
 
-    if (t_act < 4000*yr2sec/t_norm) then
+    if (t_act < ice_coarse_time()*yr2sec/t_norm) then
        icedot_it = (t_norm/(1000.0_dp*yr2sec))*(ice(:,:,2) - ice(:,:,1))
     else
        icedot_it = (t_norm/(500.0_dp*yr2sec))*(ice(:,:,2) - ice(:,:,1))
@@ -838,10 +835,10 @@ contains
 
     t_act = (it-1)*dt
 
-    if (t_act < 4000*yr2sec/t_norm) then
+    if (t_act < ice_coarse_time()*yr2sec/t_norm) then
        time_point = floor(t_act/(1000.0_dp*yr2sec/t_norm)) + 1
     else
-       time_point = nt_ice5g - ceiling(((21000.0_dp*yr2sec/t_norm) - t_act)/(500.0_dp*yr2sec/t_norm))
+       time_point = nt_ice - ceiling(((ice_total_time()*yr2sec/t_norm) - t_act)/(500.0_dp*yr2sec/t_norm))
     end if
 
   end subroutine time_point_rem

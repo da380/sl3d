@@ -871,26 +871,28 @@ contains
     read(abuf,'(10x,i5)') lmaxmod
     num = llen-15-1-(lmaxmod+1)-1-3-1
     
-    ! This doesn't work
-
     nstr = num
 
-    !if(llen > 15) then
-    !   idef = 0
-    !   write(form,'(''(16x,'',i3,''i1,1x,i3,1x,80i1)'')') lmax+1
-    !   read(abuf,form) (lask(i+1),i=0,lmaxmod),nstr,(mask(i),i=1,num)
-       !print *, lask(1:lmaxmod+1),nstr,mask(1:num)
-    !   if(num /= nstr) stop 'error 1 in heread'
-    !else
-    !   idef = 1
-    !   do  i = 0,lmax
-    !      lask(i+1) = 1
-    !   end do
-    !end if
-
     lask(:) = 1
-    mask(1:3) = 0
-    mask(4:21) = 1
+    mask(:) = 0
+
+    if(llen > 15) then
+       ! the header carries the degree mask, the number of structural
+       ! parameters, and the parameter mask.  The format is built from
+       ! lmaxmod, the degree of this model: building it from lmax, the
+       ! truncation degree of the calculation, is what used to make this
+       ! read fail.
+       idef = 0
+       write(form,'(''(16x,'',i3,''i1,1x,i3,1x,80i1)'')') lmaxmod+1
+       read(abuf,form) (lask(i+1),i=0,lmaxmod),nstr,(mask(i),i=1,num)
+       if(num /= nstr) stop 'error 1 in heread'
+    else
+       ! no header information: take every degree and every parameter
+       idef = 1
+       do  i = 0,lmaxmod
+          lask(i+1) = 1
+       end do
+    end if
     
     leny = 0
     do  l = 0,lmaxmod
@@ -977,7 +979,7 @@ contains
     ! in sph format dvs/vs is defined by parameters 4 to 24
     do k = 4,nstr 
        ind = 0
-       do i = 0,lmax
+       do i = 0,min(lmax,lmaxmod)
           do j = 1,2*i+1
              ind = ind+1
              dvsr(i,j,k) = mfac*anmdl(leny*(k-1)+ind) ! actually dvs/vs

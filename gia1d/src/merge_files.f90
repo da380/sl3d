@@ -7,13 +7,13 @@ program merge_files
 
   implicit none
 
-  integer(i4b) :: lmax,iphi,igl,io1,io2,io3,io4,it
+  integer(i4b) :: iphi,igl,io1,io2,io3,io4,it
   real(dp) :: lat,long,xx,yy,tmp1,tmp2,tmp3,tmp4,tmp5,var1,var2,var3
   character(len=256) :: file1,file2
 
   lmax = 64
 
-  call set_sh_grid(lmax)
+  call set_sh_grid
   call rob_projection
 
   !do it = 1,43

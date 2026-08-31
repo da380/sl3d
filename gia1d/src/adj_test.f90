@@ -8,6 +8,7 @@ program adj_test
   use module_model
   use module_mat
   use module_sl
+  use module_ice
   use module_kern
 
   implicit none
@@ -50,11 +51,14 @@ program adj_test
 
   ! if needed, display input info
   if(narg == 0) then
-     print *, 'inputs: [model]'
+     print *, 'inputs: [model] {ice model: ice5g (default), ice6g, ice7g}'
      stop
   end if
 
-  if(narg /= 1) stop 'bad input'
+  if(narg > 2) stop 'bad input'
+
+  ! the ice model may be named as an optional second argument
+  call init_ice_model
 
   !--------------------------!
   !  read in the model file  !
@@ -97,7 +101,7 @@ program adj_test
   !             calculate load              !
   !=========================================!
 
-  allocate(ice_data(ngl,nphi,nt_ice5g))
+  allocate(ice_data(ngl,nphi,nt_ice))
   ice_data = 0.0_dp
 
   call set_ice_model(ice_data)    
@@ -108,19 +112,11 @@ program adj_test
   !==================================================!
 
   ! set initial sea level to be negative topography
-  allocate(sea_t(nlong_ice5g,nlat_ice5g))
+  allocate(sea_t(nlong_ice,nlat_ice))
   sea_t = 0.0_dp
-  open(newunit=io,file='/home/oc251/raid/data/ice5g/ascii/ice5g_v1.2_21.0k_1deg.orog.ascii')
-  do ilat = 1,nlat_ice5g
-     do ilong = 1,nlong_ice5g
-        !ilonged = ilong
-        ilonged = ilong + (nlong_ice5g/2)
-        if (ilonged > nlong_ice5g) ilonged = ilonged - nlong_ice5g
-        read(io,*) tmp
-        sea_t(ilonged,ilat) = -1.0_dp*tmp/(r_norm)
-     end do
-  end do
-  close(io)
+  ! the surface altitude at 21 ka, as negative topography
+  call read_ice_grid(1,'topography',sea_t)
+  sea_t = -sea_t/r_norm
 
   allocate(sea_level_data(ngl,nphi))
   sea_level_data = 0.0_dp
@@ -223,8 +219,8 @@ program adj_test
      ! Interpolate to find rate of change of load
      ! We want load at previous time step and time reversed
      it1 = time_point(nt-it+2,dt)
-     if (it1 == nt_ice5g) then
-        ice_load = ice_data(:,:,nt_ice5g)
+     if (it1 == nt_ice) then
+        ice_load = ice_data(:,:,nt_ice)
      else
         call load_interp(nt-it+2,dt,ice_data(:,:,it1:it1+1),ice_load)
      end if
@@ -239,8 +235,8 @@ program adj_test
 
      ! Calculate load at CURRENT reversed time
      it1 = time_point(nt-it+1,dt)
-     if (it1 == nt_ice5g) then
-        ice_load = ice_data(:,:,nt_ice5g)
+     if (it1 == nt_ice) then
+        ice_load = ice_data(:,:,nt_ice)
      else
         call load_interp(nt-it+1,dt,ice_data(:,:,it1:it1+1),ice_load)
      end if

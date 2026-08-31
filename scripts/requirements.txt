@@ -1,0 +1,4 @@
+# Everything the plotting scripts need.  Both are usually available from the
+# system package manager as well, as python3-numpy and python3-matplotlib.
+numpy
+matplotlib

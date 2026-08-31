@@ -7,6 +7,7 @@ module module_sl
   use module_function
   use module_fourier
   use module_gia
+  use module_ice
   
   implicit none
 
@@ -30,44 +31,15 @@ contains
 
     implicit none
 
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(out) :: ice
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(out) :: ice
 
     integer(i4b) :: it,ilat,ilong,ilonged,io,igl,iphi
     real(dp) :: tmp,long,lat
     character(len=256) :: file1,icefile
-    real(dp), dimension(nlong_ice5g,nlat_ice5g,nt_ice5g) :: ice_t
+    real(dp), dimension(nlong_ice,nlat_ice,nt_ice) :: ice_t
 
-    do it = 1,nt_ice5g
-       ! every 1000 years from 21000 to 17000, then every 500
-     
-       if (it < 6) then
-          call string_cat_int('/home/oc251/raid/data/ice5g/ascii/ice5g_v1.2_',22-it,file1)
-       else if (it < 20) then
-          call string_cat_int('/home/oc251/raid/data/ice5g/ascii/ice5g_v1.2_',(nt_ice5g-it)/2,file1)
-       else
-          call string_cat_int('/home/oc251/raid/data/ice5g/ascii/ice5g_v1.2_0',(nt_ice5g-it)/2,file1)
-       end if
-
-       if ((mod(it,2) == 0) .and. (it > 5)) then
-          icefile = trim(file1) // trim('.5k_1deg.sftgit.ascii')
-       else
-          icefile = trim(file1) // trim('.0k_1deg.sftgit.ascii')
-       end if
-
-       open(newunit=io,file=icefile,action='read',form='formatted')
-
-       do ilat = 1,nlat_ice5g
-          do ilong = 1,nlong_ice5g
-             ilonged = ilong + (nlong_ice5g/2)
-             if (ilonged > nlong_ice5g) ilonged = ilonged - nlong_ice5g
-             !ilonged = ilong
-             read(io,*) tmp
-             ice_t(ilonged,ilat,it) = tmp
-
-          end do
-       end do
-       close(io)
-
+    do it = 1,nt_ice
+       call read_ice_grid(it,'thickness',ice_t(:,:,it))
     end do
 
     ! normalise
@@ -75,7 +47,7 @@ contains
 
     ice = 0.0_dp
 
-    do it = 1,nt_ice5g
+    do it = 1,nt_ice
 
        ! interpolate function
        do iphi = 1,nphi
@@ -558,7 +530,7 @@ contains
 
     integer(i4b), intent(in) :: nt,nout
     real(dp), intent(in) :: dt
-    complex(dpc), dimension(ngl,nphi,nt_ice5g), intent(in) :: ice_data
+    complex(dpc), dimension(ngl,nphi,nt_ice), intent(in) :: ice_data
     complex(dpc), dimension(ngl,nphi), intent(in) :: sl_0
     complex(dpc), dimension(ngl,nphi,nout), intent(out) :: sl_out
     complex(dpc), dimension((lmax+1)**2,nglob_ssg,nout), intent(out), optional :: UVp_out
