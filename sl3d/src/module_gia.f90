@@ -60,7 +60,7 @@ contains
     complex(dpc), dimension((lmax+1)**2,nglob_tor), intent(out) :: bW
     complex(dpc), dimension((lmax+1)**2), intent(in), optional :: load
 
-    integer(i4b) :: inode,ispec,ilayer,pa,ua,va,wa,l,m,ispec1,lmtot,lmcur,i,jnode,ub,vb,wb
+    integer(i4b) :: inode,ispec,ilayer,pa,ua,va,wa,l,m,ispec1,lmtot,lmcur,i,jnode,ub,vb,wb,icolour
     real(dp) :: zeta2,zeta,zeta2m2,rl,rr,rmu
     complex(dpc) :: uu,vv,ww,dU,dV,dW
     complex(dpc), dimension(5,(lmax+1)**2) :: dten
@@ -85,11 +85,20 @@ contains
 
        Alm = 0.0_dp
 
+       ! The elements form a radial chain in which each shares exactly one
+       ! global node with its neighbour, so taking them in two passes, the
+       ! odd numbered elements and then the even, means no two elements
+       ! running at the same time ever touch the same node.  That removes
+       ! the race on the assembled right hand side, and since a shared node
+       ! always takes its two contributions in the same order, the result
+       ! no longer depends on the number of threads.
+       do icolour = 0,1
+
        !$OMP PARALLEL DO PRIVATE(pa,ua,va,wa,ispec1,lmtot,lmcur,i,zeta2,zeta,zeta2m2), &
        !$OMP& PRIVATE(rl,rr,rmu,uu,vv,ww,dU,dV,dW,ub,vb,wb), &
        !$OMP& FIRSTPRIVATE(dten,Aspat,Alm), &
        !$OMP& SHARED(lmax,memm1,UVpm1,Wm1,dUm1,dVm1,dWm1,memdot,bUVp,bW,load)
-       do ispec = sect_ind(1,ilayer), sect_ind(2,ilayer)
+       do ispec = sect_ind(1,ilayer)+icolour, sect_ind(2,ilayer), 2
           Alm = 0.0_dp
           do inode = 1,ngll
              dten = 0.0_dp
@@ -218,6 +227,8 @@ contains
           end do
        end do
        !$OMP END PARALLEL DO
+
+       end do
     end do
 
     ! Add load terms

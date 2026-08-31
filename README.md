@@ -116,6 +116,9 @@ ICE_DIR=~/dev/sl3d/data ~/dev/sl3d/build/run/sl3d/sea_level_3d prem.simp.vm1 ice
 ```
 
 They are OpenMP parallel, so set `OMP_NUM_THREADS` to suit the machine.
+Results do not depend on how many threads are used: the assembly loops
+take the elements in two passes, odd numbered and then even, so that no
+two elements sharing a node are ever handled at the same time.
 
 The forward programs write one file per output time, named for the age it
 holds: `sl.1d.20.50` from gia1d, `sl.3d.20.50` from sl3d, both meaning 20.5 ka.
@@ -148,6 +151,59 @@ however often the run writes output.
 | `kernel_int` | Integrates a kernel file over the model volume |
 | `visc_corr` | Correlation and rms, as a function of radius, between two 3D viscosity fields |
 | `merge_files`, `read_kl`, `read_kl_2`, `read_rob` | Post-processing of output files for plotting |
+
+
+### Configuring a run
+
+Every program has defaults built in, and takes an optional namelist file that
+overrides them. So the simplest run is still
+
+```
+cd build/run
+./sl3d/sea_level_3d prem.simp.vm1
+```
+
+and a configured one is
+
+```
+./sl3d/sea_level_3d run.nml
+```
+
+with `run.nml` holding as much or as little as you want to change:
+
+```
+&run
+  earth_model    = 'prem.simp.vm1'
+  ice_model_name = 'ice6g'      ! ice5g, ice6g or ice7g
+  lmax_run       = 64           ! spherical harmonic truncation degree
+  time_step      = 5.0          ! years
+  output_every   = 50.0         ! years
+  run_length     = -1.0         ! years; negative is the whole ice history
+/
+
+&kernel                         ! read by the kernel and inversion programs
+  site_lat       = 57.0
+  site_long      = -110.0
+  load_degree    = 2
+  load_order     = 2
+/
+```
+
+Anything you leave out keeps the program's own default, so the same file can be
+used with programs that want quite different settings. Both groups are
+optional, as is every entry in them. Arguments are recognised by what they
+name rather than by their position, so a config file, an earth model and an ice
+model can be given in any combination and any order, and anything named on the
+command line overrides the file:
+
+```
+./sl3d/sea_level_3d run.nml ice7g       # the file, but with a different ice model
+./sl3d/sea_level_3d prem.simp.vm1 ice6g # no file at all
+```
+
+Each run writes `config.out.nml` beside its results, holding the parameters it
+actually used. That file is itself a valid config file, so a run can be
+repeated exactly by handing its record back to the program.
 
 
 ## Plotting

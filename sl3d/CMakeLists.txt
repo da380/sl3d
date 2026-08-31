@@ -9,6 +9,7 @@ set(SL3D_CORE_SRCS
   src/nrutil.f90
   src/module_util.f90
   src/module_ice.f90
+  src/module_config.f90
   src/module_fourier.f90
   src/module_model.f90
   src/gll_library.f90

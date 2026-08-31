@@ -77,7 +77,7 @@ contains
     complex(dpc), dimension((lmax+1)**2,nglob_ssg), intent(out) :: bUVp
     complex(dpc), dimension((lmax+1)**2), intent(in), optional :: b_lm,ocean_lm
 
-    integer(i4b) :: inode,ispec,ilayer,pa,ua,va,l,m,ispec1,lmtot,lmcur,i,jnode,ub,vb
+    integer(i4b) :: inode,ispec,ilayer,pa,ua,va,l,m,ispec1,lmtot,lmcur,i,jnode,ub,vb,icolour
     real(dp) :: zeta2,zeta,zeta2m2,rl,rr,rmu,gsurf,rsurf,rsi,tmp
     complex(dpc) :: bint,area,comb1,comb2,comb3
 
@@ -99,10 +99,19 @@ contains
        if (sect_ind(3,ilayer) /=2) cycle
 
 
+       ! The elements form a radial chain in which each shares exactly one
+       ! global node with its neighbour, so taking them in two passes, the
+       ! odd numbered elements and then the even, means no two elements
+       ! running at the same time ever touch the same node.  That removes
+       ! the race on the assembled right hand side, and since a shared node
+       ! always takes its two contributions in the same order, the result
+       ! no longer depends on the number of threads.
+       do icolour = 0,1
+
        !$OMP PARALLEL DO PRIVATE(pa,ua,va,ispec1,lmtot,lmcur,i,zeta2,zeta,zeta2m2), &
        !$OMP& PRIVATE(rl,rr,rmu,rsi,ub,vb,tmp,comb1,comb2,comb3,inode,jnode,l,m), &
        !$OMP& SHARED(lmax,memm1,UVpm1,dUm1,dVm1,memdot,bUVp,b_lm,ocean_lm)
-       do ispec = sect_ind(1,ilayer), sect_ind(2,ilayer)
+       do ispec = sect_ind(1,ilayer)+icolour, sect_ind(2,ilayer), 2
 
           do inode = 1,ngll
              rr = r_node(inode,ispec)
@@ -176,6 +185,8 @@ contains
           end do
        end do
        !$OMP END PARALLEL DO
+
+       end do
     end do
 
     ! Add load terms if present

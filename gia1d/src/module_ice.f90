@@ -74,6 +74,20 @@ contains
   end subroutine init_ice_model
 
 
+  function is_ice_model(name) result(known)
+    !  Is this the name of one of the ice models?
+    implicit none
+    character(len=*), intent(in) :: name
+    logical(lgt) :: known
+    select case(trim(adjustl(name)))
+    case('ice5g','ice6g','ice7g')
+       known = .true.
+    case default
+       known = .false.
+    end select
+  end function is_ice_model
+
+
   subroutine set_ice_model_type(name)
     !  Everything that differs between the three models lives here.
     implicit none

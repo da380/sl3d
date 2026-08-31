@@ -9,6 +9,7 @@ program visc_kern_1d
   use module_mat
   use module_sl
   use module_ice
+  use module_config
   use module_kern
 
   implicit none
@@ -42,28 +43,24 @@ program visc_kern_1d
 
   call set_parameters
 
-  ! number of input arguments 
-  narg = command_argument_count()
+  !----------------------------------------------!
+  !  the parameters of this run: these defaults  !
+  !  may be overridden by a config file          !
+  !----------------------------------------------!
+  lmax_run     = 64
+  time_step    = 50.0_dp      ! years
+  output_every = 50.0_dp      ! years
+  run_length   = 12000.0_dp
 
-  ! if needed, display input info
-  if(narg == 0) then
-     print *, 'inputs: [model] {ice model: ice5g (default), ice6g, ice7g}'
-     stop
-  end if
+  call read_config
 
-  if(narg > 2) stop 'bad input'
-
-  ! the ice model may be named as an optional second argument
-  call init_ice_model
+  ! leave a record of what this run used, beside its results
+  call write_config('config.out.nml')
 
   !--------------------------!
   !  read in the model file  !
   !--------------------------!
-  call get_command_argument(1,model_file)
-  inquire(file=trim(model_file),exist=ltmp)
-  if(.not.ltmp) stop 'can''t find model file'
-
-  open(newunit = io,file=trim(model_file),action='read',form='formatted')
+  open(newunit = io,file=trim(earth_model),action='read',form='formatted')
   call read_model(io)
   close(io)
 
@@ -72,7 +69,7 @@ program visc_kern_1d
   !---------------------------------!
 
   ! set lmax
-  lmax = 64
+  lmax = lmax_run
 
   call set_sh_grid
   call calc_sph_harm
@@ -133,10 +130,10 @@ program visc_kern_1d
 
   ! set time stepping parameters
   t1 = 0.0_dp
-  t2 = 12000.0_dp*yr2sec/t_norm
-  dt = 50.0_dp*yr2sec/t_norm
+  t2 = run_time()*yr2sec/t_norm
+  dt = time_step*yr2sec/t_norm
   !nt = (t2-t1)/dt + 1
-  nt = 241
+  nt = nint(run_time()/time_step) + 1
   dt = (t2-t1)/(nt-1)
   print *, dt*t_norm*sec2yr
 

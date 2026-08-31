@@ -9,6 +9,7 @@ program visc_test
   use module_mat
   use module_sl
   use module_ice
+  use module_config
   use module_kern
 
   implicit none
@@ -43,28 +44,26 @@ program visc_test
 
   call set_parameters
 
-  ! number of input arguments 
-  narg = command_argument_count()
+  !----------------------------------------------!
+  !  the parameters of this run: these defaults  !
+  !  may be overridden by a config file          !
+  !----------------------------------------------!
+  lmax_run     = 64
+  time_step    = 50.0_dp      ! years
+  output_every = 50.0_dp      ! years
+  site_lat     = 38.4719561826_dp
+  site_long    = -99.84375_dp
+  run_length   = -1.0_dp     ! the whole ice history
 
-  ! if needed, display input info
-  if(narg == 0) then
-     print *, 'inputs: [model] {ice model: ice5g (default), ice6g, ice7g}'
-     stop
-  end if
+  call read_config
 
-  if(narg > 2) stop 'bad input'
-
-  ! the ice model may be named as an optional second argument
-  call init_ice_model
+  ! leave a record of what this run used, beside its results
+  call write_config('config.out.nml')
 
   !--------------------------!
   !  read in the model file  !
   !--------------------------!
-  call get_command_argument(1,model_file)
-  inquire(file=trim(model_file),exist=ltmp)
-  if(.not.ltmp) stop 'can''t find model file'
-
-  open(newunit = io,file=trim(model_file),action='read',form='formatted')
+  open(newunit = io,file=trim(earth_model),action='read',form='formatted')
   call read_model(io)
   close(io)
 
@@ -73,7 +72,7 @@ program visc_test
   !---------------------------------!
 
   ! set lmax
-  lmax = 64
+  lmax = lmax_run
 
   call set_sh_grid
   call calc_sph_harm
@@ -135,14 +134,14 @@ program visc_test
   ! set time stepping parameters
   t1 = 0.0_dp
   ! run over the whole of the chosen ice history
-  t2 = ice_total_time()*yr2sec/t_norm
-  dt = 50.0_dp*yr2sec/t_norm
+  t2 = run_time()*yr2sec/t_norm
+  dt = time_step*yr2sec/t_norm
   !nt = (t2-t1)/dt + 1
-  nt = nint(ice_total_time()/50.0_dp) + 1
+  nt = nint(run_time()/time_step) + 1
   dt = (t2-t1)/(nt-1)
   print *, dt*t_norm*sec2yr
 
-  nout = nt
+  nout = nint(run_time()/output_every) + 1
 
   ! Construct A matrices
   call construct_system_matrix
@@ -176,9 +175,8 @@ program visc_test
   allocate(adj_load%load_lm((lmax+1)**2))
   adj_load%type = 1
 
-  load_lat = 38.4719561826_dp
-  load_long = -99.84375_dp
-
+  load_lat = site_lat
+  load_long = site_long
   !load_lat = 0.0_dp
   !load_long = 0.0_dp
 

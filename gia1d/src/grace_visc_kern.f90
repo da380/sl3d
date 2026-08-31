@@ -9,6 +9,7 @@ program grace_visc_kern
   use module_mat
   use module_sl
   use module_ice
+  use module_config
   use module_kern
 
   implicit none
@@ -45,28 +46,26 @@ program grace_visc_kern
 
   call set_parameters
 
-  ! number of input arguments 
-  narg = command_argument_count()
+  !----------------------------------------------!
+  !  the parameters of this run: these defaults  !
+  !  may be overridden by a config file          !
+  !----------------------------------------------!
+  lmax_run     = 64
+  time_step    = 50.0_dp      ! years
+  output_every = 50.0_dp      ! years
+  load_degree  = 20
+  load_order   = 9
+  run_length   = 6000.0_dp
 
-  ! if needed, display input info
-  if(narg == 0) then
-     print *, 'inputs: [model] {ice model: ice5g (default), ice6g, ice7g}'
-     stop
-  end if
+  call read_config
 
-  if(narg > 2) stop 'bad input'
-
-  ! the ice model may be named as an optional second argument
-  call init_ice_model
+  ! leave a record of what this run used, beside its results
+  call write_config('config.out.nml')
 
   !--------------------------!
   !  read in the model file  !
   !--------------------------!
-  call get_command_argument(1,model_file)
-  inquire(file=trim(model_file),exist=ltmp)
-  if(.not.ltmp) stop 'can''t find model file'
-
-  open(newunit = io,file=trim(model_file),action='read',form='formatted')
+  open(newunit = io,file=trim(earth_model),action='read',form='formatted')
   call read_model(io)
   close(io)
 
@@ -75,7 +74,7 @@ program grace_visc_kern
   !---------------------------------!
 
   ! set lmax
-  lmax = 64
+  lmax = lmax_run
 
   call set_sh_grid
   call calc_sph_harm
@@ -136,10 +135,10 @@ program grace_visc_kern
 
   ! set time stepping parameters
   t1 = 0.0_dp
-  t2 = 6000.0_dp*yr2sec/t_norm
-  dt = 50.0_dp*yr2sec/t_norm
+  t2 = run_time()*yr2sec/t_norm
+  dt = time_step*yr2sec/t_norm
   !nt = (t2-t1)/dt + 1
-  nt = 121
+  nt = nint(run_time()/time_step) + 1
   dt = (t2-t1)/(nt-1)
   print *, dt*t_norm*sec2yr
 
@@ -166,9 +165,8 @@ program grace_visc_kern
   allocate(adj_load%load_lm((lmax+1)**2))
   adj_load%type = 3
 
-  load_l = 20
-  load_m = 9
-
+  load_l = load_degree
+  load_m = load_order
   call real_sph_load(load_l,load_m,adj_load%load_lm)
 
   allocate(kern(ngl,nphi,ngll,nspec))
