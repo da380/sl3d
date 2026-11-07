@@ -48,6 +48,7 @@ set(SL3D_PROGRAMS
   visc_corr
   adj_test
   visc_test
+  visc_from_vs
   extract_sl
   file_test)
 

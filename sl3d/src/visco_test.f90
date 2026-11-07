@@ -41,7 +41,7 @@ program visco_test
      stop
   end if
 
-  if(narg /= 1) stop 'bad input'
+  if(narg > 2) stop 'bad input'
 
   !--------------------------!
   !  read in the model file  !
@@ -58,8 +58,12 @@ program visco_test
   !      calculate mesh size        !
   !---------------------------------!
 
-  ! set lmax
+  ! set lmax (an optional second argument; 128 by default)
   lmax = 128
+  if (narg == 2) then
+     call get_command_argument(2,file1)
+     read(file1,*) lmax
+  end if
 
   call set_sh_grid
   call calc_sph_harm
@@ -208,8 +212,9 @@ program visco_test
 
   open(newunit=io1,file='visctdispl.out')
   do iout = 1,nout
-     write(io1,*) (iout - 1)*1000.0_dp, real(U_spat(64,64,iout))*r_norm, &
-                  real(p_spat(64,64,iout))*pot_norm
+     write(io1,*) (iout - 1)*1000.0_dp, &
+                  real(U_spat(min(64,ngl),min(64,nphi),iout))*r_norm, &
+                  real(p_spat(min(64,ngl),min(64,nphi),iout))*pot_norm
 
      call string_cat_int('viscdispl.',iout-1,file1)
      open(newunit=io,file=file1)
@@ -224,5 +229,19 @@ program visco_test
   end do
   close(io1)
 
+  ! Benchmark output: the surface coefficients themselves (SI), so that
+  ! comparisons with other codes are grid-independent.
+  open(newunit=io1,file='visccoefs.out')
+  do iout = 1,nout
+     do ll = 0,lmax
+        do i = -ll,ll
+           lmcur = ll**2 + ll + 1 + i
+           write(io1,*) iout-1, ll, i, &
+                real(Us(lmcur,iout))*r_norm, aimag(Us(lmcur,iout))*r_norm, &
+                real(ps(lmcur,iout))*pot_norm, aimag(ps(lmcur,iout))*pot_norm
+        end do
+     end do
+  end do
+  close(io1)
 
 end program visco_test

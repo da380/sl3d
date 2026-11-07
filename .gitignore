@@ -1,5 +1,5 @@
 # CMake build tree; everything the build produces lives in here
-build/
+build*/
 
 # Stray compiled artefacts, in case anything is built by hand
 *.o

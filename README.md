@@ -150,6 +150,7 @@ however often the run writes output.
 | `visco_test` | Time steps the viscoelastic response alone, without the sea level equation |
 | `kernel_int` | Integrates a kernel file over the model volume |
 | `visc_corr` | Correlation and rms, as a function of radius, between two 3D viscosity fields |
+| `visc_from_vs` | Writes the 3D viscosity `visc_3d_from_vs` builds from S20RTS, node by node (`visc_from_vs.out`), so that another code's version of the chain can be held to it |
 | `merge_files`, `read_kl`, `read_kl_2`, `read_rob` | Post-processing of output files for plotting |
 
 
